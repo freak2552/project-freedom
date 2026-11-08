@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Session from "@/models/Session";
 import User from "@/models/User";
@@ -25,6 +26,7 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
     return null;
   }
 
+  await connection();
   await connectToDatabase();
 
   const session = await Session.findOne({

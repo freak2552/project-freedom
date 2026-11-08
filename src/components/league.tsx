@@ -1,149 +1,121 @@
-import { Clock3, Sparkles, Target, Trophy } from "lucide-react";
+import { Clock, Sparkles, Target, Trophy } from 'lucide-react';
+import '@/styles/league-motion.css';
 
-type LeagueProps = {
-  hoursStudiedThisMonth?: number;
-  dailyGoalHours?: number;
-  specialDayHours?: Record<string, number>;
-  isSidebarOpen?: boolean;
+export type LeagueProps = {
+  name: string;
+  tier: number; // 0 (Failed) to 10 (Freedom)
+  monthLabel: string;
+  studiedHours: number;
+  targetHours: number;
+  progress: number; // 0 to 1+
+  collapsed?: boolean;
 };
 
-const LEVELS = [
-  { min: 50, name: "Awakening" },
-  { min: 55, name: "Rising" },
-  { min: 60, name: "Builder" },
-  { min: 65, name: "Climber" },
-  { min: 70, name: "Striver" },
-  { min: 75, name: "Achiever" },
-  { min: 80, name: "Focused" },
-  { min: 85, name: "Unstoppable" },
-  { min: 90, name: "Mastery" },
-  { min: 95, name: "Freedom" },
-];
-
-export default function League({
-  hoursStudiedThisMonth = 0,
-  dailyGoalHours = 5,
-  specialDayHours = {},
-  isSidebarOpen = true,
+export function League({
+  name,
+  tier,
+  monthLabel,
+  studiedHours,
+  targetHours,
+  progress,
+  collapsed = false,
 }: LeagueProps) {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const percent = Math.round(progress * 100);
+  const glow = 0.25 + (tier / 10) * 0.6; // higher leagues glow more
+  const barWidth = `${Math.min(progress, 1) * 100}%`;
 
-  let monthlyTarget = 0;
-
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    monthlyTarget += specialDayHours[dateKey] ?? dailyGoalHours;
-  }
-
-  const completion =
-    monthlyTarget > 0 ? (hoursStudiedThisMonth / monthlyTarget) * 100 : 0;
-
-  let leagueName = "Failed";
-  for (const level of LEVELS) {
-    if (completion >= level.min) leagueName = level.name;
-  }
-
-  const monthName = now.toLocaleString("en", { month: "long" });
-  const progressWidth = Math.min(completion, 100);
-  const specialDayCount = Object.keys(specialDayHours).filter((date) =>
-    date.startsWith(`${year}-${String(month + 1).padStart(2, "0")}-`),
-  ).length;
-
-  if (!isSidebarOpen) {
+  if (collapsed) {
     return (
-      <section
-        className="mb-5 flex flex-col items-center gap-2 rounded-xl border border-[#e1c66e] bg-[#fce598] py-3"
-        aria-label={`Monthly league: ${leagueName}, ${Math.round(completion)} percent`}
+      <div
+        className="flex flex-col items-center gap-1"
+        title={`${name} · ${percent}% of ${monthLabel}`}
       >
-        <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/80 bg-gradient-to-br from-[#d98c36] to-[#f3c25b] shadow-md">
-          <Trophy className="h-5 w-5 text-white" />
+        <TrophyBadge tier={tier} size="sm" glow={glow} />
+        <span className="text-[10px] font-extrabold text-amber-900 dark:text-amber-200">
+          {percent}%
         </span>
-        <span className="text-[10px] font-black text-gray-800">
-          {Math.round(completion)}%
-        </span>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="mb-5 rounded-xl border border-[#e1c66e] bg-[#fce598] p-3">
-      <div className="mb-3 rounded-md bg-gradient-to-r from-[#d98c36] to-[#e4a64c] py-1.5 text-center text-[11px] font-bold tracking-wider text-white shadow">
+    <section
+      aria-label="Monthly league"
+      className="relative overflow-hidden rounded-2xl border border-amber-300/80 bg-[#FFF8DC] p-4 shadow-md shadow-amber-900/10 dark:border-amber-700/50 dark:bg-[#33290c] dark:shadow-black/30"
+    >
+      <div className="league-shine relative overflow-hidden rounded-md bg-gradient-to-r from-[#F5A524] to-[#FCD84A] py-1.5 text-center text-[11px] font-extrabold tracking-[0.16em] text-amber-950">
         MONTHLY LEAGUE
       </div>
 
-      <div className="relative overflow-hidden rounded-xl border border-[#d9b855] bg-gradient-to-br from-[#fff8d9] via-white/70 to-[#f7df8c] px-3 pb-3">
-        <div className="relative flex flex-col items-center py-4">
-          <div className="relative">
-            <span className="absolute -inset-1.5 rounded-full border border-[#d98c36]/40" />
-            <span className="relative flex h-[5.25rem] w-[5.25rem] items-center justify-center rounded-full border-4 border-white/80 bg-gradient-to-br from-[#d98c36] via-[#e4a64c] to-[#f3c25b] shadow-lg">
-              <Trophy className="h-10 w-10 text-white" />
-            </span>
-            <Sparkles className="absolute -right-3 -top-1 h-5 w-5 text-[#d98c36]" />
-          </div>
-
-          <h2 className="mt-3 text-lg font-black tracking-wide text-gray-800">
-            {leagueName}
-          </h2>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
-            {monthName} League
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg border border-[#d9b855]/50 bg-white/60 p-2 text-center">
-            <div className="flex items-center justify-center gap-1 text-gray-500">
-              <Clock3 className="h-3 w-3" />
-              <span className="text-[9px] font-bold uppercase">Studied</span>
-            </div>
-            <p className="mt-0.5 text-sm font-black text-green-700">
-              {hoursStudiedThisMonth.toFixed(1)}h
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-[#d9b855]/50 bg-white/60 p-2 text-center">
-            <div className="flex items-center justify-center gap-1 text-gray-500">
-              <Target className="h-3 w-3" />
-              <span className="text-[9px] font-bold uppercase">Target</span>
-            </div>
-            <p className="mt-0.5 text-sm font-black text-gray-800">
-              {monthlyTarget.toFixed(1)}h
-            </p>
-          </div>
-        </div>
+      <div className="mt-4 flex flex-col items-center">
+        <TrophyBadge tier={tier} size="lg" glow={glow} />
+        <p className="mt-3 text-lg font-extrabold text-amber-900 dark:text-amber-200">{name}</p>
+        <p className="text-[10px] font-bold tracking-[0.14em] text-stone-500 dark:text-stone-400">
+          {monthLabel.toUpperCase()}
+        </p>
       </div>
 
-      <div className="mt-3">
-        <div className="mb-1 flex items-end justify-between px-1 text-[10px] font-bold text-gray-700">
-          <span>Monthly progress</span>
-          <span className="text-sm font-black text-[#d98c36]">
-            {Math.round(completion)}%
-          </span>
-        </div>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Stat icon={<Clock size={13} />} label="Studied" value={`${studiedHours.toFixed(1)}h`} tone="text-emerald-700 dark:text-emerald-400" />
+        <Stat icon={<Target size={13} />} label="Target" value={`${targetHours.toFixed(1)}h`} tone="text-emerald-950 dark:text-emerald-100" />
+      </div>
 
+      <div className="mt-4">
+        <div className="mb-1 flex justify-between text-[10px] font-bold text-stone-600 dark:text-stone-300">
+          <span>Progress</span>
+          <span>{percent}%</span>
+        </div>
         <div
-          className="h-3 overflow-hidden rounded-full border border-[#d9b855]/50 bg-white/50 shadow-inner"
           role="progressbar"
-          aria-label="Monthly study progress"
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={Math.min(Math.round(completion), 100)}
+          aria-valuenow={Math.min(percent, 100)}
+          className="h-2 overflow-hidden rounded-full bg-amber-200 dark:bg-amber-950"
         >
           <div
-            className="h-full rounded-full bg-gradient-to-r from-[#d98c36] via-[#e4a64c] to-green-400 transition-all"
-            style={{ width: `${progressWidth}%` }}
+            className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-400 transition-[width] duration-700"
+            style={{ width: barWidth }}
           />
-        </div>
-
-        <div className="mt-1 flex justify-between px-1 text-[9px] text-gray-500">
-          <span>
-            {specialDayCount} special day{specialDayCount === 1 ? "" : "s"}
-          </span>
-          <span>{dailyGoalHours}h/day base</span>
         </div>
       </div>
     </section>
+  );
+}
+
+function Stat({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-xl border border-amber-200 bg-white/80 px-2 py-2 text-center dark:border-amber-800/60 dark:bg-amber-950/40">
+      <div className="flex items-center justify-center gap-1 text-[9px] font-bold tracking-[0.1em] text-stone-500 dark:text-stone-400">
+        {icon}
+        {label.toUpperCase()}
+      </div>
+      <div className={`mt-0.5 text-sm font-extrabold ${tone}`}>{value}</div>
+    </div>
+  );
+}
+
+function TrophyBadge({ tier, size, glow }: { tier: number; size: 'sm' | 'lg'; glow: number }) {
+  const disc = size === 'lg' ? 'h-24 w-24' : 'h-10 w-10';
+  const icon = size === 'lg' ? 40 : 18;
+  return (
+    <div className="relative">
+      <div
+        aria-hidden="true"
+        className="league-glow absolute inset-0 rounded-full bg-amber-400 blur-md"
+        style={{ ['--glow' as string]: glow }}
+      />
+      <div
+        className={`relative flex ${disc} items-center justify-center rounded-full bg-gradient-to-br from-[#FCD84A] to-[#D97706] ring-4 ring-amber-100 dark:ring-amber-900`}
+      >
+        <Trophy size={icon} className="text-amber-50" aria-hidden="true" />
+        {tier >= 1 && (
+          <Sparkles
+            size={size === 'lg' ? 18 : 10}
+            aria-hidden="true"
+            className="league-sparkle absolute -right-1 -top-1 text-amber-700 dark:text-amber-300"
+          />
+        )}
+      </div>
+    </div>
   );
 }

@@ -1,118 +1,249 @@
-"use client";
+'use client';
 
-import { useMemo, useState, type MouseEvent } from "react";
-import DateStrip from "./components/DateStrip";
-import FloatingActionDock from "./components/FloatingActionDock";
-import MonthNavigator from "./components/MonthNavigator";
-import StudyRecords from "./components/StudyRecords";
-import StudyTimer from "./components/StudyTimer";
-import SubjectPanel from "./components/SubjectPanel";
-import type { StudyRecord, StudySubject } from "./components/study-types";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { currentMonthKey, dayKeysOfMonth, shiftMonth, todayKey } from '@/lib/dates';
+import { DateStrip } from './components/DateStrip';
+import { FloatingActionDock } from './components/FloatingActionDock';
+import { MonthNavigator } from './components/MonthNavigator';
+import { StudyRecords } from './components/StudyRecords';
+import { StudyTimer } from './components/StudyTimer';
+import { SubjectPanel } from './components/SubjectPanel';
+import type { StudyRecord, Subject } from './components/study-types';
 
-function makeDateKey(date: Date) {
-  return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
-}
-
-function parseDateKey(key: string) {
-  const [year, month, day] = key.split("-").map(Number);
-  return new Date(year, month - 1, day);
+// Small JSON helper: throws with the server's message when a request fails.
+async function api<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...init?.headers },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? 'Something went wrong');
+  return data as T;
 }
 
 export default function StudyPage() {
-  const [viewMonth, setViewMonth] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-  });
-  const [selectedDate, setSelectedDate] = useState(() => makeDateKey(new Date()));
-  const [subjects, setSubjects] = useState<StudySubject[]>([
-    { id: "math", name: "MATH" },
-    { id: "history", name: "HISTORY" },
-    { id: "physics", name: "PHYSICS" },
-    { id: "chemistry", name: "CHEMISTRY" },
-    { id: "biology", name: "BIOLOGY" },
-  ]);
+  const [monthKey, setMonthKey] = useState(() => currentMonthKey());
+  const [selectedDate, setSelectedDate] = useState(() => todayKey());
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [records, setRecords] = useState<StudyRecord[]>([]);
+  const [loadingRecords, setLoadingRecords] = useState(false);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
-  const [studyMinutes, setStudyMinutes] = useState(0);
-  const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId) ?? null;
-  const dayRecords = useMemo(() => records.filter((record) => record.date === selectedDate), [records, selectedDate]);
+  const [minutes, setMinutes] = useState(30);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  function changeMonth(offset: number) {
-    const nextMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + offset, 1);
-    setViewMonth(nextMonth);
-    setSelectedDate(makeDateKey(nextMonth));
-  }
+  const subjectPanelRef = useRef<HTMLElement>(null);
+  const timerRef = useRef<HTMLDivElement>(null);
 
-  function addSubject(name: string) {
-    if (subjects.some((subject) => subject.name.toLowerCase() === name.toLowerCase())) {
-      window.alert("That subject already exists.");
-      return;
-    }
-    setSubjects((current) => [...current, { id: String(Date.now()) + Math.random().toString(36).slice(2, 7), name: name.trim().toUpperCase() }]);
-  }
+  const selectedSubject = subjects.find((s) => s.id === selectedSubjectId) ?? null;
 
-  function renameSubject(id: string, name: string) {
-    const cleanName = name.trim().toUpperCase();
-    setSubjects((current) => current.map((subject) => subject.id === id ? { ...subject, name: cleanName } : subject));
-    setRecords((current) => current.map((record) => record.subjectId === id ? { ...record, subjectName: cleanName } : record));
-  }
+  const showError = useCallback((err: unknown) => {
+    setNotice(err instanceof Error ? err.message : 'Something went wrong');
+  }, []);
 
-  function deleteSubject(id: string) {
-    setSubjects((current) => current.filter((subject) => subject.id !== id));
-    if (selectedSubjectId === id) setSelectedSubjectId(null);
-  }
+  // Load subjects once.
+  useEffect(() => {
+    api<{ subjects: Subject[] }>('/api/subjects')
+      .then((d) => setSubjects(d.subjects))
+      .catch(showError);
+  }, [showError]);
 
-  function saveStudyTime() {
-    if (!selectedSubject || !Number.isInteger(studyMinutes) || studyMinutes <= 0) return;
-    setRecords((current) => {
-      const existing = current.find((record) => record.date === selectedDate && record.subjectId === selectedSubject.id);
-      if (existing) {
-        return current.map((record) => record.id === existing.id ? { ...record, minutes: record.minutes + studyMinutes } : record);
-      }
-      return [...current, {
-        id: String(Date.now()) + Math.random().toString(36).slice(2, 7),
-        subjectId: selectedSubject.id,
-        subjectName: selectedSubject.name,
-        date: selectedDate,
-        minutes: studyMinutes,
-      }];
-    });
-    setStudyMinutes(0);
-  }
+  // Load the records for the selected date.
+  useEffect(() => {
+    let active = true;
+    setLoadingRecords(true);
+    api<{ records: StudyRecord[] }>(`/api/study/records?date=${selectedDate}`)
+      .then((d) => active && setRecords(d.records))
+      .catch((err) => active && showError(err))
+      .finally(() => active && setLoadingRecords(false));
+    return () => {
+      active = false;
+    };
+  }, [selectedDate, showError]);
 
-  function closeTimerWhenClickingFreeArea(event: MouseEvent<HTMLElement>) {
-    const target = event.target as HTMLElement;
-    if (!target.closest("[data-keep-timer-open]")) setSelectedSubjectId(null);
+  // Clicking free space outside the subject panel and the timer closes the timer.
+  useEffect(() => {
+    if (!selectedSubjectId) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (subjectPanelRef.current?.contains(target) || timerRef.current?.contains(target)) return;
+      setSelectedSubjectId(null);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [selectedSubjectId]);
+
+  // Auto-clear the notice after a few seconds.
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  function changeMonth(delta: number) {
+    const next = shiftMonth(monthKey, delta);
+    setMonthKey(next);
+    setSelectedDate(next === currentMonthKey() ? todayKey() : dayKeysOfMonth(next)[0]);
   }
 
   function goToToday() {
-    const today = new Date();
-    setViewMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-    setSelectedDate(makeDateKey(today));
+    setMonthKey(currentMonthKey());
+    setSelectedDate(todayKey());
+  }
+
+  async function addSubject(name: string): Promise<boolean> {
+    try {
+      const data = await api<{ subject: Subject }>('/api/subjects', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
+      setSubjects((prev) => [...prev, data.subject].sort((a, b) => a.name.localeCompare(b.name)));
+      return true;
+    } catch (err) {
+      showError(err);
+      return false;
+    }
+  }
+
+  async function renameSubject(name: string): Promise<boolean> {
+    if (!selectedSubject) return false;
+    const id = selectedSubject.id;
+    try {
+      const data = await api<{ subject: Subject }>(`/api/subjects/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      });
+      setSubjects((prev) =>
+        prev.map((s) => (s.id === id ? data.subject : s)).sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      // Past records shown on this screen get the new name too.
+      setRecords((prev) => prev.map((r) => (r.subjectId === id ? { ...r, subjectName: data.subject.name } : r)));
+      return true;
+    } catch (err) {
+      showError(err);
+      return false;
+    }
+  }
+
+  async function deleteSubject(): Promise<boolean> {
+    if (!selectedSubject) return false;
+    const id = selectedSubject.id;
+    try {
+      await api<{ ok: boolean }>(`/api/subjects/${id}`, { method: 'DELETE' });
+      setSubjects((prev) => prev.filter((s) => s.id !== id));
+      setSelectedSubjectId(null);
+      // Records stay on the day; their subjectName snapshot keeps them readable.
+      return true;
+    } catch (err) {
+      showError(err);
+      return false;
+    }
+  }
+
+  async function saveTime() {
+    if (!selectedSubject || minutes <= 0) return;
+    setSaving(true);
+    try {
+      const data = await api<{ record: StudyRecord }>('/api/study/records', {
+        method: 'POST',
+        body: JSON.stringify({ subjectId: selectedSubject.id, dateKey: selectedDate, minutes }),
+      });
+      const saved = data.record;
+      setRecords((prev) => {
+        const exists = prev.some((r) => r.id === saved.id);
+        return exists ? prev.map((r) => (r.id === saved.id ? saved : r)) : [...prev, saved];
+      });
+      setNotice(`Saved ${minutes} min to ${selectedSubject.name}`);
+    } catch (err) {
+      showError(err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function updateRecord(id: string, newMinutes: number): Promise<boolean> {
+    try {
+      const data = await api<{ record: StudyRecord }>(`/api/study/records/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ minutes: newMinutes }),
+      });
+      setRecords((prev) => prev.map((r) => (r.id === id ? data.record : r)));
+      return true;
+    } catch (err) {
+      showError(err);
+      return false;
+    }
+  }
+
+  async function deleteRecord(id: string): Promise<boolean> {
+    try {
+      await api<{ ok: boolean }>(`/api/study/records/${id}`, { method: 'DELETE' });
+      setRecords((prev) => prev.filter((r) => r.id !== id));
+      return true;
+    } catch (err) {
+      showError(err);
+      return false;
+    }
   }
 
   return (
-    <div className="relative flex min-h-[calc(100dvh-3.5rem)] flex-col gap-2 overflow-hidden bg-[#fce598] p-3 md:min-h-dvh" onClickCapture={closeTimerWhenClickingFreeArea}>
-      <MonthNavigator month={viewMonth} onPrevious={() => changeMonth(-1)} onNext={() => changeMonth(1)} />
-      <DateStrip month={viewMonth} selectedDate={selectedDate} onSelect={setSelectedDate} />
-      <div className="grid min-h-0 flex-1 gap-3 pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(250px,22vw)] lg:pb-20">
-        <StudyRecords
-          selectedDate={selectedDate}
-          records={dayRecords}
-          onEdit={(id, minutes) => setRecords((current) => current.map((record) => record.id === id ? { ...record, minutes } : record))}
-          onDelete={(id) => setRecords((current) => current.filter((record) => record.id !== id))}
-        />
-        <SubjectPanel
-          subjects={subjects}
-          selectedSubjectId={selectedSubjectId}
-          onSelect={(subject) => { setSelectedSubjectId(subject.id); setStudyMinutes(0); }}
-          onAdd={addSubject}
-          onRename={renameSubject}
-          onDelete={deleteSubject}
-        />
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      {/* Top: month controls, date strip, quick actions */}
+      <header className="shrink-0 px-4 pt-4 md:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <MonthNavigator monthKey={monthKey} onPrevious={() => changeMonth(-1)} onNext={() => changeMonth(1)} />
+          <FloatingActionDock timerOpen={!!selectedSubject} onGoToToday={goToToday} onCloseTimer={() => setSelectedSubjectId(null)} />
+        </div>
+        <div className="mt-3">
+          <DateStrip monthKey={monthKey} selectedDate={selectedDate} todayDate={todayKey()} onSelect={setSelectedDate} />
+        </div>
+      </header>
+
+      {notice && (
+        <p role="status" className="mx-4 mt-2 rounded-lg bg-emerald-800 px-3 py-2 text-center text-xs font-bold text-amber-50 md:mx-6">
+          {notice}
+        </p>
+      )}
+
+      {/* Middle: records in the centre, subjects on the right (below on narrow screens) */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 md:p-6 lg:flex-row">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <StudyRecords
+            dateKey={selectedDate}
+            records={records}
+            loading={loadingRecords}
+            onUpdate={updateRecord}
+            onDelete={deleteRecord}
+          />
+
+          {/* Timer appears near the bottom centre when a subject is selected */}
+          {selectedSubject && (
+            <div ref={timerRef} className="mt-auto flex justify-center pt-6">
+              <StudyTimer
+                subjectName={selectedSubject.name}
+                dateKey={selectedDate}
+                minutes={minutes}
+                saving={saving}
+                onMinutesChange={setMinutes}
+                onSave={saveTime}
+                onClose={() => setSelectedSubjectId(null)}
+                onRename={renameSubject}
+                onDelete={deleteSubject}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="w-full shrink-0 lg:w-72">
+          <SubjectPanel
+            ref={subjectPanelRef}
+            subjects={subjects}
+            selectedSubjectId={selectedSubjectId}
+            onSelect={(id) => setSelectedSubjectId(id)}
+            onAdd={addSubject}
+          />
+        </div>
       </div>
-      {selectedSubject && <StudyTimer subject={selectedSubject} selectedDate={selectedDate} minutes={studyMinutes} onMinutesChange={setStudyMinutes} onSave={saveStudyTime} />}
-      <FloatingActionDock onToday={goToToday} onCloseTimer={() => setSelectedSubjectId(null)} timerOpen={Boolean(selectedSubject)} />
     </div>
   );
 }

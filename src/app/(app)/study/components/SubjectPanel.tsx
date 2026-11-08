@@ -1,69 +1,89 @@
-"use client";
+'use client';
 
-import { useState, type FormEvent } from "react";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
-import type { StudySubject } from "./study-types";
+import { forwardRef, useState } from 'react';
+import { Plus } from 'lucide-react';
+import type { Subject } from './study-types';
 
-type Props = {
-  subjects: StudySubject[];
+type SubjectPanelProps = {
+  subjects: Subject[];
   selectedSubjectId: string | null;
-  onSelect: (subject: StudySubject) => void;
-  onAdd: (name: string) => void;
-  onRename: (id: string, name: string) => void;
-  onDelete: (id: string) => void;
+  onSelect: (subjectId: string) => void;
+  onAdd: (name: string) => Promise<boolean>;
 };
 
-export default function SubjectPanel({ subjects, selectedSubjectId, onSelect, onAdd, onRename, onDelete }: Props) {
-  const [newName, setNewName] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
+// Right-side panel: add a subject, then select one to open the timer.
+// Edit and Delete live beside the timer, not on each subject here.
+export const SubjectPanel = forwardRef<HTMLElement, SubjectPanelProps>(function SubjectPanel(
+  { subjects, selectedSubjectId, onSelect, onAdd },
+  ref,
+) {
+  const [name, setName] = useState('');
+  const [adding, setAdding] = useState(false);
 
-  function addSubject(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const name = newName.trim();
-    if (!name) return;
-    onAdd(name);
-    setNewName("");
-  }
-
-  function saveName(event: FormEvent<HTMLFormElement>, id: string) {
-    event.preventDefault();
-    const name = editName.trim();
-    if (name) onRename(id, name);
-    setEditingId(null);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setAdding(true);
+    const ok = await onAdd(trimmed);
+    setAdding(false);
+    if (ok) setName('');
   }
 
   return (
-    <aside data-keep-timer-open className="flex min-h-[16rem] flex-col rounded-xl border border-[#d9b855] bg-[#f8df89] p-3 lg:min-h-0">
-      <form onSubmit={addSubject} className="flex gap-2">
-        <input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="New subject" aria-label="New subject name" maxLength={40} className="min-w-0 flex-1 rounded-lg border border-[#d8bd62] bg-[#fffaf0] px-3 py-2 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-[#3e8ca0]" />
-        <button type="submit" disabled={!newName.trim()} aria-label="Add subject" className="rounded-lg bg-[#3e8ca0] px-3 text-white shadow-sm hover:bg-[#327385] disabled:opacity-40"><Plus className="h-5 w-5" /></button>
+    <section
+      ref={ref}
+      aria-label="Subjects"
+      className="flex h-full min-h-[320px] flex-col rounded-2xl border border-[#F59E0B]/50 bg-[#FDE68A] p-4 shadow-md shadow-amber-900/10 dark:border-amber-800 dark:bg-[#2a2308]"
+    >
+      <form onSubmit={submit} className="flex gap-2">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={60}
+          placeholder="New subject"
+          aria-label="New subject name"
+          className="h-10 min-w-0 flex-1 rounded-xl border border-[#F59E0B] bg-[#FFFBEB] px-3 text-sm text-[#064E3B] placeholder:text-stone-500 dark:border-amber-700 dark:bg-amber-950/70 dark:text-amber-50"
+        />
+        <button
+          type="submit"
+          disabled={adding || !name.trim()}
+          aria-label="Add subject"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#047857] text-[#FFFBEB] transition hover:bg-[#065F46] disabled:opacity-50"
+        >
+          <Plus size={18} aria-hidden="true" />
+        </button>
       </form>
 
-      <h2 className="mt-3 border-b border-emerald-800/20 pb-1 text-sm font-bold text-green-800">Subjects</h2>
-      <ul className="mt-2 flex-1 space-y-1 overflow-y-auto">
-        {subjects.length === 0 && <li className="py-5 text-center text-xs text-gray-500">Add a subject to start.</li>}
-        {subjects.map((subject) => {
-          const selected = selectedSubjectId === subject.id;
-          return (
-            <li key={subject.id} className={"rounded-lg border bg-[#fff5d0]/80 transition " + (selected ? "border-emerald-600 ring-1 ring-emerald-400" : "border-transparent hover:border-[#d9b855]")}>
-              {editingId === subject.id ? (
-                <form onSubmit={(event) => saveName(event, subject.id)} className="flex items-center gap-1 p-1.5">
-                  <input autoFocus value={editName} onChange={(event) => setEditName(event.target.value)} maxLength={40} aria-label="Edit subject name" className="min-w-0 flex-1 rounded-md border border-[#d8bd62] bg-white px-2 py-1.5 text-sm outline-none focus:border-[#3e8ca0]" />
-                  <button type="submit" aria-label="Save subject name" className="rounded-md bg-emerald-100 p-1.5 text-emerald-800 hover:bg-emerald-200"><Check className="h-4 w-4" /></button>
-                  <button type="button" onClick={() => setEditingId(null)} aria-label="Cancel edit" className="rounded-md bg-gray-100 p-1.5 text-gray-600 hover:bg-gray-200"><X className="h-4 w-4" /></button>
-                </form>
-              ) : (
-                <div className="flex items-center gap-1 p-1">
-                  <button type="button" onClick={() => onSelect(subject)} aria-pressed={selected} className="min-w-0 flex-1 truncate rounded-md px-2 py-2 text-left text-sm font-semibold text-[#293b45] hover:bg-white/60">{subject.name}</button>
-                  <button type="button" onClick={() => { setEditingId(subject.id); setEditName(subject.name); }} title="Edit subject name" aria-label={"Edit " + subject.name} className="rounded-md p-1.5 text-[#3e8ca0] hover:bg-sky-100"><Pencil className="h-4 w-4" /></button>
-                  <button type="button" onClick={() => { if (window.confirm("Remove this subject? Existing study records will be kept.")) onDelete(subject.id); }} title="Delete subject" aria-label={"Delete " + subject.name} className="rounded-md p-1.5 text-red-600 hover:bg-red-100"><Trash2 className="h-4 w-4" /></button>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </aside>
+      <h2 className="mt-5 border-b border-[#D97706] pb-2 text-sm font-extrabold text-[#047857] dark:text-emerald-400">
+        Subjects
+      </h2>
+
+      {subjects.length === 0 ? (
+        <p className="mt-4 text-xs text-stone-700 dark:text-stone-300">Add a subject to start logging study time.</p>
+      ) : (
+        <ul className="mt-3 flex flex-col gap-1.5 overflow-y-auto">
+          {subjects.map((subject) => {
+            const selected = subject.id === selectedSubjectId;
+            return (
+              <li key={subject.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(subject.id)}
+                  aria-pressed={selected}
+                  className={`w-full truncate rounded-xl px-3 py-2.5 text-left text-sm font-bold transition ${
+                    selected
+                      ? 'bg-[#047857] text-[#FFFBEB] shadow-md shadow-emerald-900/25 dark:bg-emerald-600'
+                      : 'bg-[#FFFBEB] text-[#064E3B] hover:bg-[#FCD34D] dark:bg-amber-950/60 dark:text-amber-50 dark:hover:bg-amber-900'
+                  }`}
+                >
+                  {subject.name}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
-}
+});

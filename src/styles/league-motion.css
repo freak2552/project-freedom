@@ -1,0 +1,54 @@
+/* Subtle motion for the League card and the Study timer. All of it is switched off
+   for users who have asked for reduced motion. */
+
+@keyframes league-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+
+@keyframes league-twinkle {
+  0%, 100% { opacity: 0.35; transform: rotate(0deg); }
+  50% { opacity: 1; transform: rotate(12deg); }
+}
+
+@keyframes league-shine {
+  0% { transform: translateX(-120%) skewX(-20deg); }
+  60%, 100% { transform: translateX(220%) skewX(-20deg); }
+}
+
+@keyframes timer-rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.league-glow {
+  animation: league-breathe 4.5s ease-in-out infinite;
+  /* --glow is set inline from the league tier: higher leagues glow stronger. */
+  opacity: var(--glow, 0.5);
+}
+
+.league-sparkle {
+  animation: league-twinkle 2.8s ease-in-out infinite;
+}
+
+.league-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.45) 50%, transparent 60%);
+  animation: league-shine 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.timer-enter {
+  animation: timer-rise 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .league-glow,
+  .league-sparkle,
+  .league-shine::after,
+  .timer-enter {
+    animation: none !important;
+  }
+}

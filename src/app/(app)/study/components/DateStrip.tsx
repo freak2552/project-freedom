@@ -1,43 +1,59 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+'use client';
 
-type Props = {
-  month: Date;
+import { useEffect, useRef } from 'react';
+import { dayKeysOfMonth } from '@/lib/dates';
+
+type DateStripProps = {
+  monthKey: string;
   selectedDate: string;
+  todayDate: string;
   onSelect: (dateKey: string) => void;
 };
 
-function dateKey(date: Date) {
-  return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
+const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+function weekdayOf(dateKey: string): string {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  return WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
 }
 
-export default function DateStrip({ month, selectedDate, onSelect }: Props) {
-  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+// Horizontally scrollable row of every day in the month. The selected day is green.
+export function DateStrip({ monthKey, selectedDate, todayDate, onSelect }: DateStripProps) {
+  const selectedRef = useRef<HTMLButtonElement>(null);
+  const days = dayKeysOfMonth(monthKey);
+
+  // Keep the selected date in view when it changes.
+  useEffect(() => {
+    selectedRef.current?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }, [selectedDate]);
+
   return (
-    <section className="shrink-0 border-b border-[#d7bd60] pb-2" aria-label="Choose a study date">
-      <div className="flex gap-2 overflow-x-auto px-1 py-2">
-        {Array.from({ length: days }, (_, index) => {
-          const date = new Date(month.getFullYear(), month.getMonth(), index + 1);
-          const key = dateKey(date);
-          const active = key === selectedDate;
+    <div className="w-full overflow-x-auto pb-2">
+      <div role="listbox" aria-label="Choose a date" className="flex w-max gap-1.5">
+        {days.map((dateKey) => {
+          const isSelected = dateKey === selectedDate;
+          const isToday = dateKey === todayDate;
           return (
             <button
-              key={key}
+              key={dateKey}
+              ref={isSelected ? selectedRef : undefined}
               type="button"
-              onClick={() => onSelect(key)}
-              aria-pressed={active}
-              className={"flex h-11 min-w-10 shrink-0 flex-col items-center justify-center rounded-lg border px-2 shadow-sm transition " + (active ? "border-emerald-700 bg-gradient-to-b from-emerald-500 to-emerald-700 text-white" : "border-[#d8a345] bg-gradient-to-b from-[#f4c45f] to-[#e3a43d] text-[#29343d] hover:brightness-105")}
+              role="option"
+              aria-selected={isSelected}
+              aria-current={isToday ? 'date' : undefined}
+              onClick={() => onSelect(dateKey)}
+              className={`flex h-[42px] w-10 shrink-0 flex-col items-center justify-center rounded-md border text-[9px] font-bold leading-tight transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047857] ${
+                isSelected
+                  ? 'border-[#065F46] bg-[#047857] text-[#FFFBEB] shadow-md shadow-emerald-900/30 dark:border-emerald-500 dark:bg-emerald-600'
+                  : 'border-[#F59E0B] bg-[#FCD34D] text-[#78350F] hover:bg-[#FBBF24] dark:border-amber-800 dark:bg-amber-900/70 dark:text-amber-100 dark:hover:bg-amber-800'
+              } ${isToday && !isSelected ? 'ring-2 ring-[#047857]/60 ring-offset-1 ring-offset-[#FEF3C7] dark:ring-offset-[#1c1708]' : ''}`}
             >
-              <span className="text-[8px] font-semibold uppercase">{date.toLocaleDateString("en", { weekday: "short" })}</span>
-              <span className="text-sm font-black leading-4">{date.getDate()}</span>
+              <span>{weekdayOf(dateKey)}</span>
+              <span className="text-[13px] font-extrabold">{Number(dateKey.slice(8))}</span>
             </button>
           );
         })}
-      </div>
-      <div className="flex items-center gap-2 px-1 text-gray-500" aria-hidden="true">
-        <ChevronLeft className="h-3 w-3 shrink-0" />
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-300"><div className="h-full w-3/4 rounded-full bg-gray-500" /></div>
-        <ChevronRight className="h-3 w-3 shrink-0" />
-      </div>
-    </section>
+      </div> 
+    </div>
   );
 }

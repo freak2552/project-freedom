@@ -1,78 +1,158 @@
-"use client";
+'use client';
 
-import { useMemo, useState, type FormEvent } from "react";
-import { Check, Clock3, Pencil, Trash2, X } from "lucide-react";
-import type { StudyRecord } from "./study-types";
+import { useState } from 'react';
+import { Check, Pencil, Trash2, X } from 'lucide-react';
+import { formatDayLabel } from '@/lib/dates';
+import { formatMinutes, sumHours, type StudyRecord } from './study-types';
 
-type Props = {
-  selectedDate: string;
+type StudyRecordsProps = {
+  dateKey: string;
   records: StudyRecord[];
-  onEdit: (id: string, minutes: number) => void;
-  onDelete: (id: string) => void;
+  loading: boolean;
+  onUpdate: (id: string, minutes: number) => Promise<boolean>;
+  onDelete: (id: string) => Promise<boolean>;
 };
 
-function displayDate(value: string) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString("en", { day: "numeric", month: "long" });
-}
-
-export default function StudyRecords({ selectedDate, records, onEdit, onDelete }: Props) {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [minutesValue, setMinutesValue] = useState("");
-  const totalMinutes = useMemo(() => records.reduce((sum, record) => sum + record.minutes, 0), [records]);
-
-  function beginEdit(record: StudyRecord) {
-    setEditingId(record.id);
-    setMinutesValue(String(record.minutes));
-  }
-
-  function saveEdit(event: FormEvent<HTMLFormElement>, id: string) {
-    event.preventDefault();
-    const value = Number(minutesValue);
-    if (Number.isInteger(value) && value > 0 && value <= 1440) {
-      onEdit(id, value);
-      setEditingId(null);
-    }
-  }
-
+// Centre column: day heading, total studied, and the day's records.
+export function StudyRecords({ dateKey, records, loading, onUpdate, onDelete }: StudyRecordsProps) {
   return (
-    <section className="relative flex min-h-[19rem] flex-1 flex-col rounded-xl border border-[#e0c465] bg-[#fce598]/75 px-4 py-4 sm:px-6" aria-labelledby="study-records-title">
-      <div className="text-center">
-        <h2 id="study-records-title" className="inline-block border-b border-[#b58c37] pb-1 text-lg font-bold text-[#253541]">Records for {displayDate(selectedDate)}</h2>
-        <p className="mx-auto mt-2 inline-flex items-center gap-1 rounded-full border border-[#d8bd62] bg-[#fff8dc] px-4 py-2 text-[11px] font-semibold text-gray-700 shadow-sm">
-          <span>Total Studied Today:</span><span className="font-black text-green-700">{(totalMinutes / 60).toFixed(1)} Hrs</span>
-        </p>
+    <section className="flex w-full flex-col items-center">
+      <h2 className="border-b-2 border-[#F59E0B] pb-1 text-xl font-extrabold text-[#064E3B] dark:border-amber-600 dark:text-amber-50">
+        Records for {formatDayLabel(dateKey)}
+      </h2>
+
+      <div className="mt-3 flex items-center gap-1.5 rounded-full border border-[#FCD34D] bg-[#FFFBEB] px-4 py-1.5 text-xs shadow-sm dark:border-amber-700 dark:bg-amber-950/70">
+        <span className="font-bold text-[#064E3B] dark:text-amber-100">Total Studied Today:</span>
+        <span className="font-extrabold text-[#047857] dark:text-emerald-400">{sumHours(records)} Hrs</span>
       </div>
 
-      {records.length === 0 ? (
-        <div className="mx-auto mt-4 w-full max-w-sm rounded-lg border border-dashed border-[#d6b84e] bg-[#fff3ca]/70 px-4 py-6 text-center text-xs text-gray-500">
+      {loading ? (
+        <p className="mt-6 text-sm text-stone-600 dark:text-stone-400">Loading records…</p>
+      ) : records.length === 0 ? (
+        <div className="mt-6 w-full max-w-[380px] rounded-xl border-[1.5px] border-dashed border-[#D97706] bg-[#FEF9C3] px-4 py-8 text-center text-[13px] text-stone-600 dark:border-amber-800 dark:bg-amber-950/40 dark:text-stone-300">
           No subjects logged for this day.
         </div>
       ) : (
-        <ul className="mx-auto mt-4 w-full max-w-2xl space-y-2">
+        <ul className="mt-6 flex w-full max-w-[380px] flex-col gap-2">
           {records.map((record) => (
-            <li key={record.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-[#ddc36c] bg-[#fff7d7] px-3 py-2.5 shadow-sm">
-              <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#253541]">{record.subjectName}</span>
-              {editingId === record.id ? (
-                <form onSubmit={(event) => saveEdit(event, record.id)} className="flex items-center gap-1.5">
-                  <input type="number" min={1} max={1440} required value={minutesValue} onChange={(event) => setMinutesValue(event.target.value)} aria-label={"Minutes for " + record.subjectName} className="w-20 rounded-md border border-[#d8bd62] bg-white px-2 py-1.5 text-sm outline-none focus:border-[#3e8ca0]" />
-                  <span className="text-xs text-gray-500">min</span>
-                  <button type="submit" aria-label="Save record time" className="rounded-md bg-emerald-100 p-1.5 text-emerald-800 hover:bg-emerald-200"><Check className="h-4 w-4" /></button>
-                  <button type="button" onClick={() => setEditingId(null)} aria-label="Cancel edit" className="rounded-md bg-gray-100 p-1.5 text-gray-600 hover:bg-gray-200"><X className="h-4 w-4" /></button>
-                </form>
-              ) : (
-                <>
-                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-800"><Clock3 className="h-4 w-4" />{record.minutes} min</span>
-                  <div className="flex items-center gap-1">
-                    <button type="button" onClick={() => beginEdit(record)} aria-label={"Edit time for " + record.subjectName} title="Edit time" className="rounded-md p-1.5 text-[#3e8ca0] hover:bg-sky-100"><Pencil className="h-4 w-4" /></button>
-                    <button type="button" onClick={() => { if (window.confirm("Delete this study record?")) onDelete(record.id); }} aria-label={"Delete record for " + record.subjectName} title="Delete record" className="rounded-md p-1.5 text-red-600 hover:bg-red-100"><Trash2 className="h-4 w-4" /></button>
-                  </div>
-                </>
-              )}
-            </li>
+            <RecordRow key={record.id} record={record} onUpdate={onUpdate} onDelete={onDelete} />
           ))}
         </ul>
       )}
     </section>
+  );
+}
+
+function RecordRow({
+  record,
+  onUpdate,
+  onDelete,
+}: {
+  record: StudyRecord;
+  onUpdate: StudyRecordsProps['onUpdate'];
+  onDelete: StudyRecordsProps['onDelete'];
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(record.minutes));
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    const minutes = Number(draft);
+    if (!Number.isInteger(minutes) || minutes < 0 || minutes > 1440) return;
+    setBusy(true);
+    const ok = await onUpdate(record.id, minutes);
+    setBusy(false);
+    if (ok) setEditing(false);
+  }
+
+  async function remove() {
+    if (!window.confirm(`Delete ${record.subjectName} (${formatMinutes(record.minutes)}) for this day?`)) return;
+    setBusy(true);
+    const ok = await onDelete(record.id);
+    if (!ok) setBusy(false);
+  }
+
+  return (
+    <li className="flex items-center gap-3 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2.5 shadow-sm dark:border-amber-800 dark:bg-amber-950/60">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold text-[#064E3B] dark:text-amber-50">{record.subjectName}</p>
+        {editing ? (
+          <div className="mt-1 flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              max={1440}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              aria-label={`Minutes for ${record.subjectName}`}
+              className="h-8 w-24 rounded-lg border border-[#F59E0B] bg-white px-2 text-sm text-[#064E3B] dark:bg-amber-950 dark:text-amber-50"
+            />
+            <span className="text-xs text-stone-600 dark:text-stone-400">min</span>
+          </div>
+        ) : (
+          <p className="text-xs text-stone-600 dark:text-stone-400">{formatMinutes(record.minutes)}</p>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="flex gap-1.5">
+          <IconButton label="Save minutes" onClick={save} disabled={busy} tone="primary">
+            <Check size={15} aria-hidden="true" />
+          </IconButton>
+          <IconButton
+            label="Cancel edit"
+            onClick={() => {
+              setDraft(String(record.minutes));
+              setEditing(false);
+            }}
+            disabled={busy}
+          >
+            <X size={15} aria-hidden="true" />
+          </IconButton>
+        </div>
+      ) : (
+        <div className="flex gap-1.5">
+          <IconButton label={`Edit ${record.subjectName} minutes`} onClick={() => setEditing(true)} disabled={busy}>
+            <Pencil size={14} aria-hidden="true" />
+          </IconButton>
+          <IconButton label={`Delete ${record.subjectName} record`} onClick={remove} disabled={busy} tone="danger">
+            <Trash2 size={14} aria-hidden="true" />
+          </IconButton>
+        </div>
+      )}
+    </li>
+  );
+}
+
+function IconButton({
+  label,
+  onClick,
+  disabled,
+  tone = 'default',
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  tone?: 'default' | 'primary' | 'danger';
+  children: React.ReactNode;
+}) {
+  const toneClass =
+    tone === 'primary'
+      ? 'bg-[#047857] text-[#FFFBEB] hover:bg-[#065F46]'
+      : tone === 'danger'
+        ? 'border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40'
+        : 'border-[#F59E0B]/60 text-[#065F46] hover:bg-[#FDE68A] dark:border-amber-700 dark:text-amber-100 dark:hover:bg-amber-900';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={`flex h-8 w-8 items-center justify-center rounded-lg border border-transparent bg-white/70 transition disabled:opacity-50 dark:bg-transparent ${toneClass}`}
+    >
+      {children}
+    </button>
   );
 }
