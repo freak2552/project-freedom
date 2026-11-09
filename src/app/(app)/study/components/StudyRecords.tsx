@@ -14,14 +14,15 @@ type StudyRecordsProps = {
 };
 
 // Centre column: day heading, total studied, and the day's records.
+// On desktop only the records list scrolls; the heading and total stay fixed.
 export function StudyRecords({ dateKey, records, loading, onUpdate, onDelete }: StudyRecordsProps) {
   return (
-    <section className="flex w-full flex-col items-center">
-      <h2 className="border-b-2 border-[#F59E0B] pb-1 text-xl font-extrabold text-[#064E3B] dark:border-amber-600 dark:text-amber-50">
+    <section className="flex min-h-0 w-full flex-1 flex-col items-center">
+      <h2 className="shrink-0 border-b-2 border-[#F59E0B] pb-1 text-xl font-extrabold text-[#064E3B] dark:border-amber-600 dark:text-amber-50">
         Records for {formatDayLabel(dateKey)}
       </h2>
 
-      <div className="mt-3 flex items-center gap-1.5 rounded-full border border-[#FCD34D] bg-[#FFFBEB] px-4 py-1.5 text-xs shadow-sm dark:border-amber-700 dark:bg-amber-950/70">
+      <div className="mt-3 flex shrink-0 items-center gap-1.5 rounded-full border border-[#FCD34D] bg-[#FFFBEB] px-4 py-1.5 text-xs shadow-sm dark:border-amber-700 dark:bg-amber-950/70">
         <span className="font-bold text-[#064E3B] dark:text-amber-100">Total Studied Today:</span>
         <span className="font-extrabold text-[#047857] dark:text-emerald-400">{sumHours(records)} Hrs</span>
       </div>
@@ -33,7 +34,8 @@ export function StudyRecords({ dateKey, records, loading, onUpdate, onDelete }: 
           No subjects logged for this day.
         </div>
       ) : (
-        <ul className="mt-6 flex w-full max-w-[380px] flex-col gap-2">
+        // max-h keeps the list scrollable on mobile; on desktop it fills the space left below the header.
+        <ul className="mt-6 flex min-h-0 w-full max-w-[380px] flex-1 flex-col gap-2 overflow-y-auto no-scrollbar pb-2 pr-1 max-h-[55vh] lg:max-h-none">
           {records.map((record) => (
             <RecordRow key={record.id} record={record} onUpdate={onUpdate} onDelete={onDelete} />
           ))}
@@ -73,7 +75,7 @@ function RecordRow({
   }
 
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2.5 shadow-sm dark:border-amber-800 dark:bg-amber-950/60">
+    <li className="flex shrink-0 items-center gap-3 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2.5 shadow-sm dark:border-amber-800 dark:bg-amber-950/60">
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-[#064E3B] dark:text-amber-50">{record.subjectName}</p>
         {editing ? (

@@ -29,6 +29,15 @@ function toRecord(r: {
   };
 }
 
+function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 11000
+  );
+}
+
 // Records for one day, e.g. GET /api/study/records?date=2026-10-27
 export async function GET(request: Request) {
   const userId = await getCurrentUserId();
@@ -63,11 +72,22 @@ export async function POST(request: Request) {
     const subject = await Subject.findOne({ _id: subjectId, userId }).lean();
     if (!subject) return NextResponse.json({ error: 'Subject not found' }, { status: 404 });
 
-    const record = await StudyRecord.findOneAndUpdate(
-      { userId, dateKey, subjectId: subject._id },
-      { $inc: { minutes }, $set: { subjectName: subject.name } },
-      { new: true, upsert: true },
-    ).lean();
+    const filter = { userId, dateKey, subjectId: subject._id };
+    const update = { $inc: { minutes }, $set: { subjectName: subject.name } };
+
+    let record;
+    try {
+      record = await StudyRecord.findOneAndUpdate(filter, update, { new: true, upsert: true }).lean();
+    } catch (err) {
+      // Two saves for the same subject and date at once can both try to insert.
+      // If one already created the row, retry as a plain update.
+      if (!isDuplicateKeyError(err)) throw err;
+      record = await StudyRecord.findOneAndUpdate(filter, update, { new: true }).lean();
+    }
+
+    if (!record) {
+      return NextResponse.json({ error: 'Could not save the study time. Please try again.' }, { status: 500 });
+    }
 
     return NextResponse.json({ record: toRecord(record) }, { status: 201 });
   } catch (err) {

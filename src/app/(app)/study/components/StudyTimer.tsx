@@ -67,7 +67,7 @@ export function StudyTimer({
   }
 
   return (
-    <div className="timer-enter relative w-[min(480px,100%)] rounded-2xl border-2 border-[#34D399] bg-[#064E3B] p-3 shadow-2xl shadow-emerald-950/30 dark:border-emerald-500 dark:bg-[#03241a]">
+    <div className="timer-enter relative w-[min(560px,100%)] rounded-2xl border-2 border-[#34D399] bg-[#064E3B] p-3 shadow-2xl shadow-emerald-950/30 dark:border-emerald-500 dark:bg-[#03241a]">
       <div className="flex items-center gap-3">
         {/* Date and subject */}
         <div className="min-w-0 shrink-0 border-r border-[#065F46] pr-3">
@@ -98,7 +98,7 @@ export function StudyTimer({
             value={minutes}
             onChange={(e) => onMinutesChange(Math.max(0, Math.min(1440, Number(e.target.value) || 0)))}
             aria-label="Minutes to save"
-            className="w-12 bg-transparent text-right text-lg font-extrabold text-[#6EE7B7] outline-none"
+            className="w-16 bg-transparent text-right text-lg font-extrabold text-[#6EE7B7] outline-none"
           />
           <span className="text-[10px] font-bold text-[#A7F3D0]">min</span>
         </div>

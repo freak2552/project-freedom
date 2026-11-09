@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { currentMonthKey, dayKeysOfMonth, shiftMonth, todayKey } from '@/lib/dates';
 import { DateStrip } from './components/DateStrip';
 import { FloatingActionDock } from './components/FloatingActionDock';
@@ -22,6 +23,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export default function StudyPage() {
+  const router = useRouter();
   const [monthKey, setMonthKey] = useState(() => currentMonthKey());
   const [selectedDate, setSelectedDate] = useState(() => todayKey());
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -40,6 +42,12 @@ export default function StudyPage() {
   const showError = useCallback((err: unknown) => {
     setNotice(err instanceof Error ? err.message : 'Something went wrong');
   }, []);
+
+  // Re-run the server side of the layout so the League box in the sidebar
+  // picks up the new totals right away (same thing Settings does on save).
+  const refreshLeague = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
   // Load subjects once.
   useEffect(() => {
@@ -86,11 +94,6 @@ export default function StudyPage() {
     setSelectedDate(next === currentMonthKey() ? todayKey() : dayKeysOfMonth(next)[0]);
   }
 
-  function goToToday() {
-    setMonthKey(currentMonthKey());
-    setSelectedDate(todayKey());
-  }
-
   async function addSubject(name: string): Promise<boolean> {
     try {
       const data = await api<{ subject: Subject }>('/api/subjects', {
@@ -98,6 +101,7 @@ export default function StudyPage() {
         body: JSON.stringify({ name }),
       });
       setSubjects((prev) => [...prev, data.subject].sort((a, b) => a.name.localeCompare(b.name)));
+      refreshLeague();
       return true;
     } catch (err) {
       showError(err);
@@ -118,6 +122,7 @@ export default function StudyPage() {
       );
       // Past records shown on this screen get the new name too.
       setRecords((prev) => prev.map((r) => (r.subjectId === id ? { ...r, subjectName: data.subject.name } : r)));
+      refreshLeague();
       return true;
     } catch (err) {
       showError(err);
@@ -133,6 +138,7 @@ export default function StudyPage() {
       setSubjects((prev) => prev.filter((s) => s.id !== id));
       setSelectedSubjectId(null);
       // Records stay on the day; their subjectName snapshot keeps them readable.
+      refreshLeague();
       return true;
     } catch (err) {
       showError(err);
@@ -154,6 +160,7 @@ export default function StudyPage() {
         return exists ? prev.map((r) => (r.id === saved.id ? saved : r)) : [...prev, saved];
       });
       setNotice(`Saved ${minutes} min to ${selectedSubject.name}`);
+      refreshLeague();
     } catch (err) {
       showError(err);
     } finally {
@@ -168,6 +175,7 @@ export default function StudyPage() {
         body: JSON.stringify({ minutes: newMinutes }),
       });
       setRecords((prev) => prev.map((r) => (r.id === id ? data.record : r)));
+      refreshLeague();
       return true;
     } catch (err) {
       showError(err);
@@ -179,6 +187,7 @@ export default function StudyPage() {
     try {
       await api<{ ok: boolean }>(`/api/study/records/${id}`, { method: 'DELETE' });
       setRecords((prev) => prev.filter((r) => r.id !== id));
+      refreshLeague();
       return true;
     } catch (err) {
       showError(err);
@@ -187,13 +196,11 @@ export default function StudyPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      {/* Top: month controls, date strip, quick actions */}
+    // Desktop: only the records list scrolls. Mobile: the whole page scrolls.
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-hidden">
+      {/* Top: month controls and date strip */}
       <header className="shrink-0 px-4 pt-4 md:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <MonthNavigator monthKey={monthKey} onPrevious={() => changeMonth(-1)} onNext={() => changeMonth(1)} />
-          <FloatingActionDock timerOpen={!!selectedSubject} onGoToToday={goToToday} onCloseTimer={() => setSelectedSubjectId(null)} />
-        </div>
+        <MonthNavigator monthKey={monthKey} onPrevious={() => changeMonth(-1)} onNext={() => changeMonth(1)} />
         <div className="mt-3">
           <DateStrip monthKey={monthKey} selectedDate={selectedDate} todayDate={todayKey()} onSelect={setSelectedDate} />
         </div>
@@ -205,9 +212,9 @@ export default function StudyPage() {
         </p>
       )}
 
-      {/* Middle: records in the centre, subjects on the right (below on narrow screens) */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 md:p-6 lg:flex-row">
-        <div className="flex min-w-0 flex-1 flex-col">
+      {/* Middle: records in the centre, subjects and quick actions on the right */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 md:p-6 lg:flex-row lg:overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <StudyRecords
             dateKey={selectedDate}
             records={records}
@@ -218,7 +225,7 @@ export default function StudyPage() {
 
           {/* Timer appears near the bottom centre when a subject is selected */}
           {selectedSubject && (
-            <div ref={timerRef} className="mt-auto flex justify-center pt-6">
+            <div ref={timerRef} className="mt-auto flex shrink-0 justify-center pt-6">
               <StudyTimer
                 subjectName={selectedSubject.name}
                 dateKey={selectedDate}
@@ -234,14 +241,20 @@ export default function StudyPage() {
           )}
         </div>
 
-        <div className="w-full shrink-0 lg:w-72">
-          <SubjectPanel
-            ref={subjectPanelRef}
-            subjects={subjects}
-            selectedSubjectId={selectedSubjectId}
-            onSelect={(id) => setSelectedSubjectId(id)}
-            onAdd={addSubject}
-          />
+        {/* Right column: subject list, with the quick-action dock directly below it at the same width */}
+        <div className="flex w-full shrink-0 flex-col justify-end gap-3 lg:w-72">
+          <div >
+            <SubjectPanel
+              ref={subjectPanelRef}
+              subjects={subjects}
+              selectedSubjectId={selectedSubjectId}
+              onSelect={(id) => setSelectedSubjectId(id)}
+              onAdd={addSubject}
+            />
+          </div>
+          <div >
+            <FloatingActionDock dateKey={selectedDate} />
+          </div>
         </div>
       </div>
     </div>

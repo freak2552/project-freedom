@@ -41,7 +41,7 @@ export function League({
   return (
     <section
       aria-label="Monthly league"
-      className="relative overflow-hidden rounded-2xl border border-amber-300/80 bg-[#FFF8DC] p-4 shadow-md shadow-amber-900/10 dark:border-amber-700/50 dark:bg-[#33290c] dark:shadow-black/30"
+      className="relative overflow-hidden rounded-2xl border border-amber-300/80 bg-[#FFF8DC] p-3 shadow-md shadow-amber-900/10 dark:border-amber-700/50 dark:bg-[#33290c] dark:shadow-black/30"
     >
       <div className="league-shine relative overflow-hidden rounded-md bg-gradient-to-r from-[#F5A524] to-[#FCD84A] py-1.5 text-center text-[11px] font-extrabold tracking-[0.16em] text-amber-950">
         MONTHLY LEAGUE
@@ -95,8 +95,8 @@ function Stat({ icon, label, value, tone }: { icon: React.ReactNode; label: stri
 }
 
 function TrophyBadge({ tier, size, glow }: { tier: number; size: 'sm' | 'lg'; glow: number }) {
-  const disc = size === 'lg' ? 'h-24 w-24' : 'h-10 w-10';
-  const icon = size === 'lg' ? 40 : 18;
+  const disc = size === 'lg' ? 'h-16 w-16' : 'h-10 w-10';
+  const icon = size === 'lg' ? 30 : 18;
   return (
     <div className="relative">
       <div

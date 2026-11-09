@@ -12,7 +12,7 @@ type SubjectPanelProps = {
 };
 
 // Right-side panel: add a subject, then select one to open the timer.
-// Edit and Delete live beside the timer, not on each subject here.
+// Fixed, shorter height; the subject list scrolls inside it when it gets long.
 export const SubjectPanel = forwardRef<HTMLElement, SubjectPanelProps>(function SubjectPanel(
   { subjects, selectedSubjectId, onSelect, onAdd },
   ref,
@@ -34,9 +34,9 @@ export const SubjectPanel = forwardRef<HTMLElement, SubjectPanelProps>(function 
     <section
       ref={ref}
       aria-label="Subjects"
-      className="flex h-full min-h-[320px] flex-col rounded-2xl border border-[#F59E0B]/50 bg-[#FDE68A] p-4 shadow-md shadow-amber-900/10 dark:border-amber-800 dark:bg-[#2a2308]"
+      className="flex h-[min(400px,60vh)] min-h-[260px] flex-col rounded-2xl border border-[#F59E0B]/50 bg-[#FDE68A] p-4 shadow-md shadow-amber-900/10 dark:border-amber-800 dark:bg-[#2a2308]"
     >
-      <form onSubmit={submit} className="flex gap-2">
+      <form onSubmit={submit} className="flex shrink-0 gap-2">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -55,18 +55,18 @@ export const SubjectPanel = forwardRef<HTMLElement, SubjectPanelProps>(function 
         </button>
       </form>
 
-      <h2 className="mt-5 border-b border-[#D97706] pb-2 text-sm font-extrabold text-[#047857] dark:text-emerald-400">
+      <h2 className="mt-5 shrink-0 border-b border-[#D97706] pb-2 text-sm font-extrabold text-[#047857] dark:text-emerald-400">
         Subjects
       </h2>
 
       {subjects.length === 0 ? (
         <p className="mt-4 text-xs text-stone-700 dark:text-stone-300">Add a subject to start logging study time.</p>
       ) : (
-        <ul className="mt-3 flex flex-col gap-1.5 overflow-y-auto">
+        <ul className="mt-3 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto no-scrollbar pr-1">
           {subjects.map((subject) => {
             const selected = subject.id === selectedSubjectId;
             return (
-              <li key={subject.id}>
+              <li key={subject.id} className="shrink-0">
                 <button
                   type="button"
                   onClick={() => onSelect(subject.id)}

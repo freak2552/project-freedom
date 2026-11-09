@@ -77,7 +77,7 @@ export function Sidebar({ league, logoutEndpoint = '/api/auth/logout' }: Sidebar
             onClick={() => setDrawerOpen(false)}
             className="absolute inset-0 bg-black/40"
           />
-          <aside className="relative flex h-full w-72 max-w-[85vw] flex-col bg-[#FCD84A] p-4 shadow-2xl dark:bg-[#2a2308]">
+          <aside className="relative flex h-full w-72 max-w-[85vw] flex-col bg-[#FCD84A] p-4 shadow-2xl dark:bg-[#2a2308] overflow-y-auto ">
             <div className="mb-2 flex justify-end">
               <button
                 type="button"
@@ -95,7 +95,7 @@ export function Sidebar({ league, logoutEndpoint = '/api/auth/logout' }: Sidebar
 
       {/* Desktop: full-height sidebar that collapses to icons plus the compact league badge. */}
       <aside
-        className={`hidden h-full shrink-0 flex-col border-r border-amber-500/40 bg-[#FCD84A] p-3 transition-[width] duration-300 md:flex dark:border-amber-900/60 dark:bg-[#2a2308] ${
+        className={`hidden h-full shrink-0 flex-col overflow-y-auto no-scrollbar border-r border-amber-500/40 bg-[#FCD84A] p-3 transition-[width] duration-300 md:flex dark:border-amber-900/60 dark:bg-[#2a2308] ${
           collapsed ? 'w-20' : 'w-64'
         }`}
       >
