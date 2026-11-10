@@ -33,7 +33,7 @@ type NavItem = { label: string; href: string | null; icon: LucideIcon };
 const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/home', icon: HomeIcon },
   { label: 'Study', href: '/study', icon: BookOpen },
-  { label: 'Habit', href: null, icon: CheckCircle2 },
+  { label: 'Habit', href: '/habit', icon: CheckCircle2 },
   { label: 'Journey', href: null, icon: TrendingUp },
   { label: 'Report', href: null, icon: BarChart3 },
   { label: 'Settings', href: '/settings', icon: Settings },

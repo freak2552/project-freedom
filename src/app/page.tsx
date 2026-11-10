@@ -83,10 +83,21 @@ export default function LandingPage() {
   }
 
   return (
-    <main
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-cover bg-center text-white"
-      style={{ backgroundImage: "url('/landing-page-bg.png')" }}
-    >
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden text-white">
+      {/* Background: desktop image on medium screens and up */}
+      <div
+        className="absolute inset-0 hidden bg-cover bg-center md:block"
+        style={{ backgroundImage: "url('/landing-page-bg.png')" }}
+        aria-hidden="true"
+      />
+
+      {/* Background: phone image on small screens */}
+      <div
+        className="absolute inset-0 block bg-cover bg-center md:hidden"
+        style={{ backgroundImage: "url('/landing-page-bg-mobile.png')" }}
+        aria-hidden="true"
+      />
+
       <div className="absolute inset-0 bg-black/20" aria-hidden="true" />
 
       <header className="absolute left-6 top-6 z-10">
