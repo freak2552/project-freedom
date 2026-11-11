@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE27A"/>
+      <stop offset="0.7" stop-color="#FFD24A"/>
+      <stop offset="1" stop-color="#F2B630"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFBE0" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#FFFBE0" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="desk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C98235"/>
+      <stop offset="1" stop-color="#7A4118"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Wall -->
+  <rect width="390" height="844" fill="url(#wall)"/>
+
+  <!-- Window light from the left -->
+  <rect x="0" y="0" width="34" height="560" fill="#FFF6C2" opacity="0.75"/>
+  <rect x="0" y="140" width="34" height="6" fill="#E8A92C" opacity="0.6"/>
+  <rect x="0" y="330" width="34" height="6" fill="#E8A92C" opacity="0.6"/>
+  <polygon points="34,0 150,0 200,600 34,600" fill="url(#beam)"/>
+
+  <!-- Shelf with books and a plant -->
+  <rect x="200" y="236" width="180" height="12" rx="3" fill="#7A4A22"/>
+  <rect x="240" y="210" width="60" height="26" rx="2" fill="#3B2A1E"/>
+  <rect x="248" y="186" width="48" height="24" rx="2" fill="#F4EBD0"/>
+  <rect x="292" y="176" width="54" height="60" rx="6" fill="#7A5230"/>
+  <ellipse cx="300" cy="150" rx="22" ry="14" fill="#3F8A3A"/>
+  <ellipse cx="335" cy="138" rx="20" ry="13" fill="#5BAA4A"/>
+  <ellipse cx="360" cy="160" rx="16" ry="11" fill="#3F8A3A"/>
+  <path d="M300 178 Q292 210 300 240" stroke="#3F8A3A" stroke-width="4" fill="none"/>
+  <path d="M338 150 Q352 200 336 232" stroke="#5BAA4A" stroke-width="4" fill="none"/>
+
+  <!-- Floor plant, bottom left -->
+  <rect x="8" y="612" width="64" height="86" rx="8" fill="#8A5A34"/>
+  <ellipse cx="30" cy="590" rx="30" ry="22" fill="#3F8A3A"/>
+  <ellipse cx="68" cy="580" rx="26" ry="18" fill="#5BAA4A"/>
+  <ellipse cx="6" cy="578" rx="22" ry="16" fill="#3F8A3A"/>
+
+  <!-- Desk -->
+  <path d="M0 640 Q195 620 390 640 L390 844 L0 844 Z" fill="url(#desk)"/>
+  <path d="M0 640 Q195 620 390 640" stroke="#E9A94A" stroke-width="3" fill="none" opacity="0.7"/>
+</svg>

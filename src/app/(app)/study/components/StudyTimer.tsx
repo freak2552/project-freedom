@@ -18,8 +18,9 @@ type StudyTimerProps = {
 
 const MAX_SLIDER_MINUTES = 240;
 
-// Bottom-centre timer bar for the selected subject.
-// Edit and Delete sit on its right side and open as pop-ups beside the bar.
+// Bottom timer bar for the selected subject.
+// Desktop: date, subject, slider, minutes, save, edit, delete, close.
+// Mobile: only the minutes input, save, edit, delete and close.
 export function StudyTimer({
   subjectName,
   dateKey,
@@ -69,14 +70,14 @@ export function StudyTimer({
   return (
     <div className="timer-enter relative w-[min(560px,100%)] rounded-2xl border-2 border-[#34D399] bg-[#064E3B] p-3 shadow-2xl shadow-emerald-950/30 dark:border-emerald-500 dark:bg-[#03241a]">
       <div className="flex items-center gap-3">
-        {/* Date and subject */}
-        <div className="min-w-0 shrink-0 border-r border-[#065F46] pr-3">
+        {/* Date and subject: desktop only */}
+        <div className="hidden min-w-0 shrink-0 border-r border-[#065F46] pr-3 md:block">
           <p className="text-[9px] font-bold uppercase tracking-wider text-[#6EE7B7]">{formatDayLabel(dateKey)}</p>
           <p className="max-w-[7.5rem] truncate text-[13px] font-extrabold text-[#ECFDF5]">{subjectName}</p>
         </div>
 
-        {/* Minutes slider */}
-        <div className="flex min-w-0 flex-1 items-center">
+        {/* Minutes slider: desktop and tablet only */}
+        <div className="hidden min-w-0 flex-1 items-center md:flex">
           <input
             type="range"
             min={0}
@@ -89,16 +90,17 @@ export function StudyTimer({
           />
         </div>
 
-        {/* Minutes input */}
-        <div className="flex shrink-0 items-center gap-1 rounded-lg bg-[#065F46] px-2 py-1">
+        {/* Minutes input: fills the bar on mobile, compact on desktop */}
+        <div className="flex min-w-0 flex-1 items-center gap-1 rounded-lg bg-[#065F46] px-2 py-1 md:flex-none md:shrink-0">
           <input
             type="number"
             min={0}
             max={1440}
+            inputMode="numeric"
             value={minutes}
             onChange={(e) => onMinutesChange(Math.max(0, Math.min(1440, Number(e.target.value) || 0)))}
             aria-label="Minutes to save"
-            className="w-16 bg-transparent text-right text-lg font-extrabold text-[#6EE7B7] outline-none"
+            className="min-w-0 flex-1 bg-transparent text-right text-lg font-extrabold text-[#6EE7B7] outline-none md:w-16 md:flex-none"
           />
           <span className="text-[10px] font-bold text-[#A7F3D0]">min</span>
         </div>
@@ -107,12 +109,12 @@ export function StudyTimer({
           type="button"
           onClick={onSave}
           disabled={saving || minutes <= 0}
-          className="shrink-0 rounded-lg bg-[#34D399] px-3.5 py-2 text-xs font-extrabold tracking-wider text-[#064E3B] transition hover:bg-[#6EE7B7] disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-lg bg-[#34D399] px-3 py-2 text-xs font-extrabold tracking-wider text-[#064E3B] transition hover:bg-[#6EE7B7] disabled:cursor-not-allowed disabled:opacity-50 md:px-3.5"
         >
           {saving ? 'SAVING…' : 'SAVE'}
         </button>
 
-        {/* Right side: edit, delete, close */}
+        {/* Edit, delete and close (close also acts as cancel) */}
         <div className="flex shrink-0 items-center gap-0.5 border-l border-[#065F46] pl-2">
           <TimerIcon label={`Edit ${subjectName}`} expanded={popup === 'edit'} onClick={() => setPopup(popup === 'edit' ? null : 'edit')}>
             <Pencil size={14} aria-hidden="true" />
@@ -120,7 +122,7 @@ export function StudyTimer({
           <TimerIcon label={`Delete ${subjectName}`} expanded={popup === 'delete'} tone="danger" onClick={() => setPopup(popup === 'delete' ? null : 'delete')}>
             <Trash2 size={14} aria-hidden="true" />
           </TimerIcon>
-          <TimerIcon label="Close timer" onClick={onClose}>
+          <TimerIcon label="Cancel and close timer" onClick={onClose}>
             <X size={14} aria-hidden="true" />
           </TimerIcon>
         </div>
@@ -131,7 +133,7 @@ export function StudyTimer({
         <div
           role="dialog"
           aria-label={popup === 'edit' ? 'Edit subject' : 'Delete subject'}
-          className="timer-enter absolute bottom-full right-0 mb-3 w-72 rounded-xl border border-[#F59E0B]/70 bg-[#FFFBEB] p-4 shadow-xl dark:border-amber-700 dark:bg-amber-950"
+          className="timer-enter absolute bottom-full right-0 mb-3 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-[#F59E0B]/70 bg-[#FFFBEB] p-4 shadow-xl dark:border-amber-700 dark:bg-amber-950"
         >
           {popup === 'edit' ? (
             <form onSubmit={submitRename} className="flex flex-col gap-3">

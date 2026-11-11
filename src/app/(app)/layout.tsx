@@ -19,7 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 // Request-time session access lives here, inside Suspense (cacheComponents).
 async function AppShell({ children }: { children: React.ReactNode }) {
   const userId = await getCurrentUserId();
-  if (!userId) redirect('/login');
+  if (!userId) redirect('/');
 
   const monthKey = currentMonthKey();
   const summary = await getMonthlySummary(userId, monthKey);

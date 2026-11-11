@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ListChecks, X } from 'lucide-react';
 import { currentMonthKey, dayKeysOfMonth, shiftMonth, todayKey } from '@/lib/dates';
 import { DateStrip } from './components/DateStrip';
 import { FloatingActionDock } from './components/FloatingActionDock';
@@ -33,9 +34,12 @@ export default function StudyPage() {
   const [minutes, setMinutes] = useState(30);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // Mobile only: whether the subject panel sheet is open. Desktop ignores this.
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  const subjectPanelRef = useRef<HTMLElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<HTMLDivElement>(null);
+  const fabRef = useRef<HTMLButtonElement>(null);
 
   const selectedSubject = subjects.find((s) => s.id === selectedSubjectId) ?? null;
 
@@ -69,12 +73,18 @@ export default function StudyPage() {
     };
   }, [selectedDate, showError]);
 
-  // Clicking free space outside the subject panel and the timer closes the timer.
+  // Clicking free space outside the subject panel, the timer and the open/close button closes the timer.
   useEffect(() => {
     if (!selectedSubjectId) return;
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as Node;
-      if (subjectPanelRef.current?.contains(target) || timerRef.current?.contains(target)) return;
+      if (
+        sheetRef.current?.contains(target) ||
+        timerRef.current?.contains(target) ||
+        fabRef.current?.contains(target)
+      ) {
+        return;
+      }
       setSelectedSubjectId(null);
     };
     document.addEventListener('pointerdown', onPointerDown);
@@ -92,6 +102,12 @@ export default function StudyPage() {
     const next = shiftMonth(monthKey, delta);
     setMonthKey(next);
     setSelectedDate(next === currentMonthKey() ? todayKey() : dayKeysOfMonth(next)[0]);
+  }
+
+  // Picking a subject opens its timer. On mobile the panel closes so the timer at the bottom is visible.
+  function chooseSubject(id: string) {
+    setSelectedSubjectId(id);
+    setSheetOpen(false);
   }
 
   async function addSubject(name: string): Promise<boolean> {
@@ -214,7 +230,8 @@ export default function StudyPage() {
 
       {/* Middle: records in the centre, subjects and quick actions on the right */}
       <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 md:p-6 lg:flex-row lg:overflow-hidden">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {/* Mobile: extra bottom space keeps the last record clear of the pinned timer and the button */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col max-lg:pb-28">
           <StudyRecords
             dateKey={selectedDate}
             records={records}
@@ -223,9 +240,12 @@ export default function StudyPage() {
             onDelete={deleteRecord}
           />
 
-          {/* Timer appears near the bottom centre when a subject is selected */}
+          {/* Timer: pinned to the bottom of the screen on mobile, bottom centre of the column on desktop */}
           {selectedSubject && (
-            <div ref={timerRef} className="mt-auto flex shrink-0 justify-center pt-6">
+            <div
+              ref={timerRef}
+              className="flex shrink-0 justify-center max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-30 max-lg:p-3 lg:mt-auto lg:pt-6"
+            >
               <StudyTimer
                 subjectName={selectedSubject.name}
                 dateKey={selectedDate}
@@ -241,18 +261,42 @@ export default function StudyPage() {
           )}
         </div>
 
-        {/* Right column: subject list, with the quick-action dock directly below it at the same width */}
+        {/* Right column: subject panel, then the open/close button and the quick-action dock at the bottom.
+            On mobile the subject panel is a sheet covering 60% of the screen. The dock stays
+            outside the sheet, so its Mood and Diary pop-ups still open full-page. */}
         <div className="flex w-full shrink-0 flex-col justify-end gap-3 lg:w-72">
-          <div >
+          <div
+            ref={sheetRef}
+            id="subject-sheet"
+            className={`flex flex-col transition-transform duration-300 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-40 max-lg:h-[60vh] max-lg:rounded-t-2xl max-lg:bg-[#FDE68A] max-lg:p-3 max-lg:shadow-2xl dark:max-lg:bg-[#2a2308] max-lg:[&>section]:h-auto max-lg:[&>section]:min-h-0 max-lg:[&>section]:flex-1 lg:w-full ${
+              sheetOpen ? 'max-lg:translate-y-0' : 'max-lg:invisible max-lg:translate-y-full'
+            }`}
+          >
             <SubjectPanel
-              ref={subjectPanelRef}
               subjects={subjects}
               selectedSubjectId={selectedSubjectId}
-              onSelect={(id) => setSelectedSubjectId(id)}
+              onSelect={chooseSubject}
               onAdd={addSubject}
             />
           </div>
-          <div >
+
+          {/* Mobile only: opens and closes the subject panel. Sits above the dock when closed  */}
+          <button
+            ref={fabRef}
+            type="button"
+            onClick={() => setSheetOpen((open) => !open)}
+            aria-expanded={sheetOpen}
+            aria-controls="subject-sheet"
+            aria-label={sheetOpen ? 'Close subjects' : 'Open subjects'}
+            title={sheetOpen ? 'Close subjects' : 'Open subjects'}
+            className={`flex h-12 w-12 items-center justify-center self-end rounded-full bg-[#047857] text-[#FFFBEB] shadow-lg transition hover:bg-[#065F46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#047857] lg:hidden ${
+              sheetOpen ? 'fixed bottom-[calc(60vh+0.5rem)] right-4 z-50' : ''
+            }`}
+          >
+            {sheetOpen ? <X size={20} aria-hidden="true" /> : <ListChecks size={20} aria-hidden="true" />}
+          </button>
+
+          <div>
             <FloatingActionDock dateKey={selectedDate} />
           </div>
         </div>

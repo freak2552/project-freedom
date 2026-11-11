@@ -18,7 +18,7 @@ export default function HomePage() {
 
 async function HomeContent() {
   const userId = await getCurrentUserId();
-  if (!userId) redirect('/login');
+  if (!userId) redirect('/');
 
   const monthKey = currentMonthKey();
   const today = todayKey();

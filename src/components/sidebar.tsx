@@ -34,8 +34,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/home', icon: HomeIcon },
   { label: 'Study', href: '/study', icon: BookOpen },
   { label: 'Habit', href: '/habit', icon: CheckCircle2 },
-  { label: 'Journey', href: null, icon: TrendingUp },
-  { label: 'Report', href: null, icon: BarChart3 },
+  { label: 'Journey', href: '/journey', icon: TrendingUp },
+  { label: 'Report', href: '/report', icon: BarChart3 },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -136,7 +136,7 @@ function SidebarBody({
     try {
       await fetch(logoutEndpoint, { method: 'POST' });
     } finally {
-      router.push('/login');
+      router.push('/');
       router.refresh();
     }
   }
