@@ -29,7 +29,7 @@ export function CreateJourneyForm({ onCreate }: CreateJourneyFormProps) {
   }
 
   return (
-    <section className="rounded-3xl border-4 border-slate-900 bg-white p-5 shadow-[6px_6px_0px_rgba(15,23,42,1)] dark:border-slate-600 dark:bg-slate-800 dark:shadow-[6px_6px_0px_rgba(255,255,255,0.12)]">
+    <section className="rounded-3xl border-4 border-slate-900 bg-white/45 p-5 backdrop-blur-md shadow-[6px_6px_0px_rgba(15,23,42,1)] dark:border-slate-600 dark:bg-slate-800 dark:shadow-[6px_6px_0px_rgba(255,255,255,0.12)]">
       <h2 className="mb-5 flex items-center gap-2 text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">
         <MapIcon className="h-7 w-7 text-rose-500" strokeWidth={3} aria-hidden="true" />
         Start a New Adventure!

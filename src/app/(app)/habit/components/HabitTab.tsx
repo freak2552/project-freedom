@@ -164,21 +164,21 @@ export default function HabitTab() {
   const go = (delta: number) => setIndex(Math.min(Math.max(safeIndex + delta, 0), Math.max(count - 1, 0)));
 
   return (
-    <div className="relative flex min-h-0 flex-1 select-none overflow-hidden bg-[#FDE9A6] text-emerald-950 dark:bg-[#1c1708] dark:text-amber-50">
+    <div className="relative flex min-h-0 flex-1 select-none overflow-hidden text-emerald-950 dark:bg-[#1c1708] dark:text-amber-50">
       {/* Background image: light mode only. Dark mode keeps the amber theme. */}
       <img
         src="/habit.png"
         alt=""
-        className="absolute inset-0 hidden h-full w-full object-cover dark:hidden md:block"
+        className="fixed inset-0 z-0 hidden h-full w-full object-cover dark:hidden md:block"
       />
       <img
         src="/habit-mobile.png"
         alt=""
-        className="absolute inset-0 block h-full w-full object-cover dark:hidden md:hidden"
+        className="fixed inset-0 z-0 block h-full w-full object-cover dark:hidden md:hidden"
       />
 
       {/* Top-right controls: always visible, so the eye can bring the background back */}
-      <div className="absolute right-4 top-4 z-50 flex items-center gap-2">
+      <div className="fixed right-3 top-3 z-30 flex items-center gap-2">
         <IconButton label="Manage habits" onClick={() => setSettingsOpen(true)}>
           <Settings className="h-5 w-5" />
         </IconButton>
@@ -192,7 +192,7 @@ export default function HabitTab() {
       </div>
 
       {showUI && (
-        <div className="relative z-10 flex h-full min-h-0 w-full flex-col gap-4 bg-black/25 p-4 pt-16 md:p-8 md:pt-8 dark:bg-black/35">
+        <div className="relative z-10 flex h-full min-h-0 w-full flex-col gap-4 bg-black/25 p-4 md:p-8 md:pt-20 dark:bg-black/35">
           {/* Month navigation */}
           <header className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/60 px-3 py-2.5 shadow-2xl backdrop-blur-md md:px-6 md:py-3">
             <IconButton label="Previous month" onClick={() => setMonthKey(shiftMonth(monthKey, -1))}>

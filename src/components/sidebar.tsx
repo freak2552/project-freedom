@@ -29,7 +29,7 @@ export type SidebarLeague = {
 
 type NavItem = { label: string; href: string | null; icon: LucideIcon };
 
-// href: null means the page is not built yet, so the entry is shown but disabled.
+
 const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/home', icon: HomeIcon },
   { label: 'Study', href: '/study', icon: BookOpen },
@@ -47,6 +47,9 @@ type SidebarProps = {
 export function Sidebar({ league, logoutEndpoint = '/api/auth/logout' }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false); // desktop only
   const [drawerOpen, setDrawerOpen] = useState(false); // mobile only
+  // Glass look only on Habit and Journey; every other page keeps the solid yellow sidebar.
+  const pathname = usePathname();
+  const glass = pathname.startsWith('/habit') || pathname.startsWith('/journey');
 
   // Escape closes the mobile drawer.
   useEffect(() => {
@@ -64,7 +67,7 @@ export function Sidebar({ league, logoutEndpoint = '/api/auth/logout' }: Sidebar
         onClick={() => setDrawerOpen(true)}
         aria-label="Open menu"
         aria-expanded={drawerOpen}
-        className="fixed left-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-xl border border-amber-400 bg-[#FCD84A] text-amber-950 shadow-md md:hidden"
+        className={`fixed left-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-xl text-amber-950 shadow-md md:hidden ${glass ? 'border border-white/50 bg-white/40 backdrop-blur-md dark:border-amber-800 dark:bg-[#2a2308] dark:text-amber-100' : 'border border-amber-400 bg-[#FCD84A]'}`}
       >
         <Menu size={20} aria-hidden="true" />
       </button>
@@ -77,7 +80,7 @@ export function Sidebar({ league, logoutEndpoint = '/api/auth/logout' }: Sidebar
             onClick={() => setDrawerOpen(false)}
             className="absolute inset-0 bg-black/40"
           />
-          <aside className="relative flex h-full w-72 max-w-[85vw] flex-col bg-[#FCD84A] p-4 shadow-2xl dark:bg-[#2a2308] overflow-y-auto ">
+          <aside className={`relative flex h-full w-72 max-w-[85vw] flex-col p-4 shadow-2xl overflow-y-auto ${glass ? 'border-r border-white/50 bg-white/50 backdrop-blur-xl dark:border-amber-900/60 dark:bg-[#2a2308]' : 'bg-[#FCD84A] dark:bg-[#2a2308]'}`}>
             <div className="mb-2 flex justify-end">
               <button
                 type="button"
@@ -95,7 +98,7 @@ export function Sidebar({ league, logoutEndpoint = '/api/auth/logout' }: Sidebar
 
       {/* Desktop: full-height sidebar that collapses to icons plus the compact league badge. */}
       <aside
-        className={`hidden h-full shrink-0 flex-col overflow-y-auto no-scrollbar border-r border-amber-500/40 bg-[#FCD84A] p-3 transition-[width] duration-300 md:flex dark:border-amber-900/60 dark:bg-[#2a2308] ${
+        className={`hidden h-full shrink-0 flex-col overflow-y-auto no-scrollbar p-3 transition-[width] duration-300 md:flex ${glass ? 'relative z-10 border-r border-white/50 bg-white/30 backdrop-blur-xl dark:border-amber-900/60 dark:bg-[#2a2308]' : 'border-r border-amber-500/40 bg-[#FCD84A] dark:border-amber-900/60 dark:bg-[#2a2308]'} ${
           collapsed ? 'w-20' : 'w-64'
         }`}
       >

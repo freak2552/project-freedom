@@ -96,21 +96,21 @@ export default function JourneyTab() {
   }
 
   return (
-    <div className="relative flex min-h-0 flex-1 select-none overflow-hidden bg-[#FDE9A6] text-slate-900 dark:bg-slate-900 dark:text-white">
+    <div className="relative flex min-h-0 flex-1 select-none overflow-hidden text-slate-900 dark:bg-slate-900 dark:text-white">
       {/* Background image: light mode only. Dark mode keeps the plain theme. */}
       <img
         src="/journey.png"
         alt=""
-        className="absolute inset-0 hidden h-full w-full object-cover dark:hidden md:block"
+        className="fixed inset-0 z-0 hidden h-full w-full object-cover dark:hidden md:block"
       />
       <img
         src="/journey-mobile.png"
         alt=""
-        className="absolute inset-0 block h-full w-full object-cover dark:hidden md:hidden"
+        className="fixed inset-0 z-0 block h-full w-full object-cover dark:hidden md:hidden"
       />
 
       {/* Eye toggle: always visible, so the background can be seen */}
-      <div className="absolute right-4 top-4 z-50">
+      <div className="fixed right-3 top-3 z-30">
         <button
           type="button"
           aria-label={showUI ? 'Hide interface' : 'Show interface'}
@@ -125,7 +125,7 @@ export default function JourneyTab() {
       </div>
 
       {showUI && (
-        <div className="relative z-10 h-full w-full overflow-y-auto bg-black/10 p-4 pt-16 md:p-8 md:pt-8 dark:bg-black/30">
+        <div className="relative z-10 h-full w-full overflow-y-auto bg-black/10 p-4 md:p-8 md:pt-20 dark:bg-black/30">
           <div className="mx-auto max-w-4xl space-y-8">
             <CreateJourneyForm onCreate={createJourney} />
 

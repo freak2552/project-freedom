@@ -10,13 +10,6 @@ type AuthUser = {
   username: string;
 };
 
-// Sticky notes on the phone design. "rotate" is the resting tilt, "delay" when the note drops in.
-const NOTES = [
-  { text: "Keep Learning!", bg: "#FFF27A", rotate: -6, delay: 0.5, pos: "right-[7%] top-[23%] w-[120px]" },
-  { text: "Small steps everyday.", bg: "#A8E6A1", rotate: 4, delay: 0.75, pos: "right-[3%] top-[34%] w-[128px]" },
-  { text: "Progress = Perfection", bg: "#F7A8A8", rotate: -3, delay: 1, pos: "right-[8%] top-[46%] w-[120px]" },
-];
-
 // Passes a CSS custom property (e.g. --d) through React's style prop.
 const vars = (values: Record<string, string>) => values as CSSProperties;
 
@@ -178,34 +171,12 @@ export default function LandingPage() {
       {/* ============ PHONE DESIGN (below md) ============ */}
       <main className="relative h-dvh min-h-[560px] overflow-hidden text-slate-900 md:hidden">
         <img
-          src="/login-bg-mobile.svg"
+          src="/landing-page-bg-mobile.png"
           alt=""
           aria-hidden="true"
           className="absolute inset-0 h-full w-full object-cover"
         />
-
-        {/* Bird flying across once */}
-        <svg
-          className="ml-bird absolute left-[64%] top-[30%] h-7 w-9"
-          viewBox="0 0 40 28"
-          aria-hidden="true"
-        >
-          <path d="M2 14 Q12 2 20 12 Q28 2 38 14 Q28 12 20 20 Q12 12 2 14Z" fill="#1c1c1c" />
-        </svg>
-
-        {/* Sticky notes */}
-        {NOTES.map((note) => (
-          <div
-            key={note.text}
-            className={`ml-note absolute ${note.pos} rounded-sm p-3 text-center text-[13px] font-medium leading-snug text-slate-800 shadow-lg`}
-            style={vars({ backgroundColor: note.bg, "--r": `${note.rotate}deg`, "--d": `${note.delay}s` })}
-          >
-            <span className="block">{note.text}</span>
-            <span className="block text-base" aria-hidden="true">
-              ☺
-            </span>
-          </div>
-        ))}
+        <div className="absolute inset-0 bg-black/10" aria-hidden="true" />
 
         {/* Login button, top left */}
         <header className="absolute left-5 top-5 z-20">
@@ -223,26 +194,20 @@ export default function LandingPage() {
           </button>
         </header>
 
-        {/* Title */}
+        {/* Title: both words use the same script style */}
         <section className="absolute inset-x-0 top-[27%] text-center">
-          <h2
-            className="ml-rise text-[58px] font-black leading-none tracking-tight"
-            style={vars({ "--d": "0.2s" })}
-          >
+          <p className="ml-script ml-rise text-[84px] leading-none" style={vars({ "--d": "0.2s" })}>
             Project
-          </h2>
-          <p
-            className="ml-script ml-rise -mt-3 text-[92px] leading-none"
-            style={vars({ "--d": "0.5s" })}
-          >
+          </p>
+          <p className="ml-script ml-rise -mt-4 text-[84px] leading-none" style={vars({ "--d": "0.4s" })}>
             freedom
           </p>
           <div
-            className="ml-rise mx-auto mt-1 h-1.5 w-40 rounded-full bg-slate-900"
-            style={vars({ "--d": "0.8s" })}
+            className="ml-rise mx-auto mt-2 h-1.5 w-40 rounded-full bg-slate-900"
+            style={vars({ "--d": "0.6s" })}
             aria-hidden="true"
           />
-          <p className="ml-rise mt-5 text-lg font-semibold" style={vars({ "--d": "1s" })}>
+          <p className="ml-rise mt-5 font-serif text-xl italic tracking-wide" style={vars({ "--d": "0.8s" })}>
             Focus. Build. Be Free.
           </p>
         </section>
@@ -250,8 +215,8 @@ export default function LandingPage() {
         {/* Invitation and progress dots */}
         <div className="absolute inset-x-0 top-[66%] flex flex-col items-center gap-3">
           <p
-            className="ml-rise text-base font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]"
-            style={vars({ "--d": "1.3s" })}
+            className="ml-rise font-serif text-lg italic tracking-wide text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
+            style={vars({ "--d": "1s" })}
           >
             Let&apos;s begin your journey
           </p>
@@ -262,14 +227,15 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Enter button, sits on the desk */}
+        {/* Enter button. After login, radar waves pulse around it to show it is the next step. */}
         <button
           type="button"
           onClick={handleEnter}
           className="absolute bottom-10 left-1/2 z-20 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-white shadow-xl transition active:scale-95"
           aria-label={user ? "Enter Project Freedom" : "Log in to enter"}
         >
-          <ArrowRight size={24} aria-hidden="true" />
+          {user && <span aria-hidden="true" className="ml-radar absolute inset-0 rounded-full" />}
+          <ArrowRight size={24} aria-hidden="true" className="relative" />
         </button>
 
         {isAuthOpen && (

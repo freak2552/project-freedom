@@ -1,41 +1,8 @@
-/* Script font for the "freedom" title (Google Fonts). */
+/* Script font for "Project" and "freedom" (Google Fonts). */
 @import url("https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap");
 
 .ml-script {
   font-family: "Caveat", cursive;
-}
-
-/* Sticky notes drop in one after another, then wiggle a few times and settle. */
-.ml-note {
-  transform-origin: top center;
-  animation:
-    ml-drop 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) var(--d, 0s) both,
-    ml-wiggle 1.2s ease-in-out calc(var(--d, 0s) + 0.9s) 3 forwards;
-}
-
-@keyframes ml-drop {
-  0% {
-    opacity: 0;
-    transform: translateY(-60px) rotate(calc(var(--r) - 14deg));
-  }
-  65% {
-    opacity: 1;
-    transform: translateY(8px) rotate(calc(var(--r) + 3deg));
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) rotate(var(--r));
-  }
-}
-
-@keyframes ml-wiggle {
-  0%,
-  100% {
-    transform: rotate(var(--r));
-  }
-  50% {
-    transform: rotate(calc(var(--r) + 2.5deg));
-  }
 }
 
 /* Title and text fade up in sequence. */
@@ -51,25 +18,6 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-/* A bird flies across once, near the title. */
-.ml-bird {
-  animation: ml-fly 4.5s ease-in-out 0.6s both;
-}
-
-@keyframes ml-fly {
-  from {
-    transform: translate(-90px, 30px);
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  to {
-    transform: translate(60px, -20px);
-    opacity: 1;
   }
 }
 
@@ -89,11 +37,37 @@
   }
 }
 
+/* Radar waves around the Enter button, shown after login. Two rings, offset in time. */
+.ml-radar::before,
+.ml-radar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid rgba(15, 23, 42, 0.6);
+  animation: ml-radar 2s ease-out infinite;
+}
+
+.ml-radar::after {
+  animation-delay: 1s;
+}
+
+@keyframes ml-radar {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ml-note,
   .ml-rise,
-  .ml-bird,
-  .ml-sheet {
+  .ml-sheet,
+  .ml-radar::before,
+  .ml-radar::after {
     animation: none !important;
   }
 }
